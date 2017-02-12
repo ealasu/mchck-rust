@@ -29,16 +29,17 @@ https://www.pjrc.com/teensy/K20P64M72SF1RM.pdf
 _sflashdata = LOADADDR(.data);
 
 MEMORY {
-    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 256K
-    RAM  (rwx) : ORIGIN = 0x1FFF8000, LENGTH = 64K /* page 90 */
+    FLASH (rx) : ORIGIN = 4096, LENGTH = 256K
+    RAM (rwx) : ORIGIN = 0x20000000 - 8K / 2, LENGTH = 8K
 }
 
 SECTIONS {
     . = 0x00000000;
     .text : {
-        KEEP(*(.vectors)) /* vectors must be placed first - page 63*/
-        . = 0x400;
-        KEEP(*(.flashconfig*)) /* flash configuration starts at 0x400 - page 569 */
+        . = 0; KEEP(*(.vectors)) /* vectors must be placed first - page 63*/
+        /*. = 0x400;*/
+        /*KEEP(*(.flashconfig*)) [> flash configuration starts at 0x400 - page 569 <]*/
+        /*. = 0x400;*/
         *(.startup*)
         *(.text*)
         *(.rodata*)

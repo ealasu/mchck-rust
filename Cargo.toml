@@ -5,10 +5,9 @@ authors = ["Michael Daffin <michael@daffin.io>"]
 build = "build.rs"
 
 [profile.dev]
+lto = false
 panic = "abort"
 
 [profile.release]
+lto = true
 panic = "abort"
-
-[target.thumbv7em-none-eabi.dependencies.rust-libcore]
-git = "https://github.com/hackndev/rust-libcore"

@@ -24,13 +24,21 @@ pub extern "C" fn __aeabi_unwind_cpp_pr1() -> () {
     loop {}
 }
 
-macro_rules! GPIOC_PDOR   {() => (0x400FF080 as *mut u32);} // GPIOC_PDOR - page 1334,1335
+#[no_mangle]
+pub extern "C" fn default_handler() -> () {
+    loop {}
+}
+
 macro_rules! WDOG_UNLOCK  {() => (0x4005200E as *mut u16);} // Watchdog Unlock register
 macro_rules! WDOG_STCTRLH {() => (0x40052000 as *mut u16);} // Watchdog Status and Control Register High
 macro_rules! GPIO_CONFIG  {() => (0x40048038 as *mut u32);}
-macro_rules! PORTC_PCR5   {() => (0x4004B014 as *mut u32);} // PORTC_PCR5 - page 223/227
-macro_rules! GPIOC_PDDR   {() => (0x400FF094 as *mut u32);} // GPIOC_PDDR - page 1334,1337
-macro_rules! GPIOC_PDOR   {() => (0x400FF080 as *mut u32);} // GPIOC_PDOR - page 1334,1335
+//macro_rules! PORTC_PCR5   {() => (0x4004B014 as *mut u32);} // PORTC_PCR5 - page 223/227
+//macro_rules! GPIOC_PDDR   {() => (0x400FF094 as *mut u32);} // GPIOC_PDDR - page 1334,1337
+//macro_rules! GPIOC_PDOR   {() => (0x400FF080 as *mut u32);} // GPIOC_PDOR - page 1334,1335
+
+macro_rules! PORTB_PCR16   {() => (0x4004A040 as *mut u32);}
+macro_rules! GPIOB_PDDR   {() => (0x400FF054 as *mut u32);}
+macro_rules! GPIOB_PDOR   {() => (0x400FF040 as *mut u32);}
 
 extern "C" {
     static mut _sflashdata: u32;
@@ -44,7 +52,7 @@ extern "C" {
 #[link_section=".vectors"]
 #[allow(non_upper_case_globals)]
 #[no_mangle]
-pub static ISRVectors: [Option<unsafe extern "C" fn()>; 16] = [Some(_estack), // Stack pointer
+pub static ISRVectors: [Option<unsafe extern "C" fn()>; 62] = [Some(_estack), // Stack pointer
                                                                Some(startup), // Reset
                                                                Some(isr_nmi), // NMI
                                                                Some(isr_hardfault), // Hard Fault
@@ -59,12 +67,62 @@ pub static ISRVectors: [Option<unsafe extern "C" fn()>; 16] = [Some(_estack), //
                                                                Some(isr_debugmon), /* Reserved for debug */
                                                                None, // Reserved
                                                                Some(isr_pendsv), // PendSV
-                                                               Some(isr_systick) /* SysTick */];
+                                                               Some(isr_systick), /* SysTick */
+
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+                                                               Some(default_handler),
+];
 
 #[link_section=".flashconfig"]
 #[allow(non_upper_case_globals)]
 #[no_mangle]
 pub static flashconfigbytes: [usize; 4] = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE];
+
+const LED_PIN: u32 = 1 << 16;
 
 pub unsafe extern "C" fn startup() {
     let mut src: *mut u32 = &mut _sflashdata;
@@ -90,27 +148,28 @@ pub unsafe extern "C" fn startup() {
     // Enable system clock on all GPIO ports - page 254
     *GPIO_CONFIG!() = 0x00043F82; // 0b1000011111110000010
     // Configure the led pin
-    *PORTC_PCR5!() = 0x00000143; // Enables GPIO | DSE | PULL_ENABLE | PULL_SELECT - page 227
+    //*PORTC_PCR5!() = 0x00000143; // Enables GPIO | DSE | PULL_ENABLE | PULL_SELECT - page 227
+    *PORTB_PCR16!() = 0x00000143; // Enables GPIO | DSE | PULL_ENABLE | PULL_SELECT - page 227
     // Set the led pin to output
-    *GPIOC_PDDR!() = 0x20; // pin 5 on port c
+    *GPIOB_PDDR!() = LED_PIN; // pin 5 on port c
 
     rust_loop();
 }
 
 pub fn led_on() {
     unsafe {
-        volatile_store(GPIOC_PDOR!(), 0x20);
+        volatile_store(GPIOB_PDOR!(), LED_PIN);
     }
 }
 
 pub fn led_off() {
     unsafe {
-        volatile_store(GPIOC_PDOR!(), 0x0);
+        volatile_store(GPIOB_PDOR!(), 0x0);
     }
 }
 
 pub fn delay(ms: i32) {
-    for _ in 0..ms * 250 {
+    for _ in 0..ms * 1250 {
         unsafe {
             asm!("NOP");
         }
