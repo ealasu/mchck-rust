@@ -9,6 +9,8 @@ rustup run stable cargo install xargo
 rustup override set nightly
 ```
 
+You'll also need `arm-none-eabi-objcopy` in your PATH.
+
 ## Compile and upload
 
 ```bash
